@@ -1,0 +1,5 @@
+Run `sphinx-apidoc -o . ../../irianas_server' in this directory.
+
+This will generate `modules.rst' and `irianas_server.rst'.
+
+Then include `modules.rst' in your `index.rst' file.
