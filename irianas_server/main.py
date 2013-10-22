@@ -1,57 +1,17 @@
 #!/usr/bin/env python
 """:mod:`irianas_server.main` -- Program entry point
 """
-
-from __future__ import print_function
-
-import argparse
 import sys
-
-from irianas_server import metadata
-
-
-def main(argv):
-    """Program entry point.
-
-    :param argv: command-line arguments
-    :type argv: :class:`list`
-    """
-    author_strings = []
-    for name, email in zip(metadata.authors, metadata.emails):
-        author_strings.append('Author: {0} <{1}>'.format(name, email))
-
-    epilog = '''
-{project} {version}
-
-{authors}
-URL: <{url}>
-'''.format(
-        project=metadata.project,
-        version=metadata.version,
-        authors='\n'.join(author_strings),
-        url=metadata.url)
-
-    arg_parser = argparse.ArgumentParser(
-        prog=argv[0],
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=metadata.description,
-        epilog=epilog)
-    arg_parser.add_argument(
-        '-v', '--version',
-        action='version',
-        version='{0} {1}'.format(metadata.project, metadata.version))
-
-    arg_parser.parse_args(args=argv[1:])
-
-    print(epilog)
-
-    return 0
+sys.path[0:0] = [""]
+from irianas_server.core import build_app
+from irianas_server import app
 
 
-def entry_point():
-    """Zero-argument entry point for use with setuptools/distribute."""
-    raise SystemExit(main(sys.argv))
+def main():
 
+    app.secret_key = 'as90kSDKO#1@|4245losadim'
+    build_app(app)
+    app.run(debug=True)
 
 if __name__ == '__main__':
-    entry_point()
+    main()
