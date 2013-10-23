@@ -2,20 +2,15 @@
 # Copyright (C) 2013 Irisel Gonzalez.
 # Authors: Irisel Gonzalez <irisel.gonzalez@gmail.com>
 #
-from flask_login import UserMixin
+import os
 from paramiko import (SSHClient, WarningPolicy, AuthenticationException)
-from irawadi_user import ManageUser as ma
+from irawadi_user import ManageUser
 from irawadi_user import UserExist, UserNotExist
-
-
-class User(UserMixin):
-
-    def __init__(self, name, id):
-        self.name = name
-        self.id = id
+from irianas_server.models import RecordSession
 
 
 class AuthSSH(object):
+    """ Class for sign in the user with system user"""
 
     @staticmethod
     def login(username, password):
@@ -24,17 +19,27 @@ class AuthSSH(object):
         client.set_missing_host_key_policy(WarningPolicy())
         try:
             client.connect('localhost', username=username, password=password)
-            return True
+
+            rs = RecordSession(user=username)
+            rs.token = os.urandom(64).encode('hex')
+            rs.save()
+
+            return dict(token=rs.token)
         except AuthenticationException:
-            return False
+            return dict(login=0)
+
+# Start the ManageUserServer class
+ma = ManageUser()
 
 
-class ManageUser(object):
+class ManageUserServer(object):
+    """ Create user in the system, without permissions and without shell """
 
     @staticmethod
     def add_user(username, password):
         try:
-            if ma.create(username, password):
+            if ma.create(user=username, p=password, M='', N='',
+                         s='/sbin/nologin'):
                 return True
             else:
                 return False
@@ -44,7 +49,7 @@ class ManageUser(object):
     @staticmethod
     def update_user(username, password):
         try:
-            if ma.update_password(username, password):
+            if ma.update_password(user=username, password=password):
                 return True
             else:
                 return False

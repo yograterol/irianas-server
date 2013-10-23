@@ -3,6 +3,7 @@
 from flask import Flask
 from irianas_server import metadata
 
+
 app = Flask(__name__)
 
 __version__ = metadata.version

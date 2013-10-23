@@ -29,5 +29,12 @@ colorama==0.2.5
 
 
 # SSH
+pyOpenSSL
 paramiko
 https://github.com/yograterol/irawadi-user/tarball/master
+
+
+# Frameworks
+flask
+flask-restful
+six

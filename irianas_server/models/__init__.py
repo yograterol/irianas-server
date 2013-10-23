@@ -12,6 +12,9 @@ from mongoengine import \
 class RecordSession(Document):
     user = StringField(max_length=50, required=True)
     date = DateTimeField(default=datetime.datetime.now())
+    token = StringField()
+    token_end = DateTimeField(default=datetime.datetime.now() +
+                              datetime.timedelta(0, 900))
     meta = {'db_alias': 'irianas_web', 'collection': 'record_session'}
 
 
@@ -25,17 +28,20 @@ class RecordActionUser(Document):
 
 # Database for irianas-server
 class Client(Document):
-    address_ip = StringField(max_length=50, required=True)
+    ip_address = StringField(max_length=50, required=True)
     services_install = ListField()
+    token = StringField()
+    token_end = DateTimeField(default=datetime.datetime.now() +
+                              datetime.timedelta(0, 100800))
     meta = {'db_alias': 'irianas_web'}
 
 
 class LogResource(Document):
     client = ReferenceField('Client')
-    date = DateTimeField(default=datetime.datetime.now(), required=True)
-    cpu = DecimalField(required=True)
-    memory = DecimalField(required=True)
-    disk = DecimalField(required=True)
+    date = DateTimeField(default=datetime.datetime.now())
+    cpu = DecimalField()
+    memory = DecimalField()
+    disk = DecimalField()
     meta = {'db_alias': 'irianas_web', 'collection': 'client.log_resource'}
 
 
