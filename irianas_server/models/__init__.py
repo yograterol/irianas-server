@@ -38,10 +38,10 @@ class Client(Document):
 
 class LogResource(Document):
     client = ReferenceField('Client')
-    date = DateTimeField(default=datetime.datetime.now(), required=True)
-    cpu = DecimalField(required=True)
-    memory = DecimalField(required=True)
-    disk = DecimalField(required=True)
+    date = DateTimeField(default=datetime.datetime.now())
+    cpu = DecimalField()
+    memory = DecimalField()
+    disk = DecimalField()
     meta = {'db_alias': 'irianas_web', 'collection': 'client.log_resource'}
 
 

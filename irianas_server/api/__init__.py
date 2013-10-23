@@ -8,7 +8,7 @@ from flask.ext.restful import Resource, abort
 from irianas_server.user import AuthSSH
 from irianas_server.user import ManageUserServer
 from irianas_server.models import RecordSession, Client
-from irianas_server.client import ManageClient
+from irianas_server.client import ManageClient, ClientBasicTask
 
 
 def requires_ssl(f):
@@ -128,5 +128,18 @@ class ClientAPI(Resource):
     def post(self):
         return ManageClient.connect_client()
 
+    def put(self):
+        return ManageClient.delete_client()
+
+
+# ****** END ******
+
+# Client Basic Tasks
+class ClientBasicTaskAPI(Resource):
+
+    method_decorators = [requires_ssl, check_token]
+
+    def get(self, action):
+        return ClientBasicTask.request_task(action)
 
 # ****** END ******
