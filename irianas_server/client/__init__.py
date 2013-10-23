@@ -4,7 +4,7 @@ from flask_restful import abort
 from irianas_server.models import Client, LogResource
 
 url_client = 'https://{ip}:9000/connection'
-url_client = 'https://{ip}:9000/api/task/{action}'
+url_client_task = 'https://{ip}:9000/api/task/{action}'
 
 
 class ManageClient(object):
@@ -41,7 +41,7 @@ class ClientBasicTask(object):
     @staticmethod
     def request_task(action):
         if action == 'monitor':
-            url = url_client.format(ip=request.form['ip'], action=action)
+            url = url_client_task.format(ip=request.form['ip'], action=action)
             req = requests.get(url)
             if req.status_code == 200:
                 result = req.json()
@@ -56,7 +56,7 @@ class ClientBasicTask(object):
 
                 return result
         elif action in ['shut', 'reboot', 'hibernate']:
-            url = url_client.format(ip=request.form['ip'], action=action)
+            url = url_client_task.format(ip=request.form['ip'], action=action)
             req = request.get(url)
             return dict(status='Sended')
         return abort(500)

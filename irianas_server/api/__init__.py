@@ -3,6 +3,7 @@
 # Authors: Irisel Gonzalez <irisel.gonzalez@gmail.com>
 #
 import datetime
+import requests
 from flask import request, session
 from flask.ext.restful import Resource, abort
 from irianas_server.user import AuthSSH
@@ -143,3 +144,17 @@ class ClientBasicTaskAPI(Resource):
         return ClientBasicTask.request_task(action)
 
 # ****** END ******
+
+
+class ClientServicesAPI(Resource):
+
+    method_decorators = [requires_ssl, check_token]
+    url = 'https://{ip}:9000/api/services/{service}/{action}'
+
+    def get(self, services, action):
+        r = requests.get(self.url)
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return dict(error=0)
+
