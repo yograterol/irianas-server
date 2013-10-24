@@ -3,7 +3,7 @@ from flask import request
 from flask_restful import abort
 from irianas_server.models import Client, LogResource
 
-url_client = 'https://{ip}:9000/connection'
+url_client = 'https://{ip}:9000/api/connect'
 url_client_task = 'https://{ip}:9000/api/task/{action}'
 
 
@@ -12,7 +12,7 @@ class ManageClient(object):
     @staticmethod
     def connect_client():
         url = url_client.format(ip=request.form['ip'])
-        req = requests.get(url)
+        req = requests.post(url, data=dict(ip=request.form['ip']))
         if req.status_code == 200:
             result = req.json()
             client = Client(ip_address=request.form['ip'])
