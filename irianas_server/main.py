@@ -33,7 +33,7 @@ def main():
     build_app(app)
     register_connection('irianas_web', 'irianas_web')
 
-    app.run(debug=debug, ssl_context=context)
+    app.run(debug=debug, ssl_context=context, host='0.0.0.0', port=9001)
 
 if __name__ == '__main__':
     main()

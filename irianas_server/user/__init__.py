@@ -3,6 +3,7 @@
 # Authors: Irisel Gonzalez <irisel.gonzalez@gmail.com>
 #
 import os
+import datetime
 from paramiko import (SSHClient, WarningPolicy, AuthenticationException)
 from irawadi_user import ManageUser
 from irawadi_user import UserExist, UserNotExist
@@ -18,13 +19,16 @@ class AuthSSH(object):
         client.load_system_host_keys()
         client.set_missing_host_key_policy(WarningPolicy())
         try:
-            client.connect('localhost', username=username, password=password)
+            client.connect('localhost', username=username, password=password,
+                           port=22)
 
             rs = RecordSession(user=username)
             rs.token = os.urandom(64).encode('hex')
+            rs.date = datetime.datetime.now()
+            rs.token_end = datetime.datetime.now() + datetime.timedelta(0, 900)
             rs.save()
 
-            return dict(token=rs.token)
+            return dict(token=rs.token, user=username)
         except AuthenticationException:
             return dict(login=0)
 
