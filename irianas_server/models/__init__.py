@@ -13,8 +13,7 @@ class RecordSession(Document):
     user = StringField(max_length=50, required=True)
     date = DateTimeField(default=datetime.datetime.now())
     token = StringField()
-    token_end = DateTimeField(default=datetime.datetime.now() +
-                              datetime.timedelta(0, 900))
+    token_end = DateTimeField()
     meta = {'db_alias': 'irianas_web', 'collection': 'record_session'}
 
 

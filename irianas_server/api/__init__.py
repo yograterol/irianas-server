@@ -4,6 +4,8 @@
 #
 import datetime
 import requests
+import platform
+import psutil
 from flask import request, session
 from flask.ext.restful import Resource, abort
 from irianas_server.user import AuthSSH
@@ -58,12 +60,24 @@ class LoginAPI(Resource):
         ses = RecordSession.objects(token=request.form.get('token'),
                                     user=user)
         if not ses:
-            return abort(401)
+            return abort(404)
         ses = ses[0]
         time = datetime.datetime.now() - datetime.timedelta(0, 3600)
         ses.token_end = time
         ses.save()
         return dict(action="Logout")
+
+
+class InfoAPI(Resource):
+    method_decorators = [requires_ssl, check_token]
+
+    def get(self):
+        data = dict(host_name=platform.node(),
+                    arch=platform.machine(),
+                    os=platform.version(),
+                    memory=psutil.virtual_memory()[0])
+        return data
+
 
 # Manage User REST API
 # ****** BEGIN ******
@@ -157,4 +171,3 @@ class ClientServicesAPI(Resource):
             return r.json()
         else:
             return dict(error=0)
-
