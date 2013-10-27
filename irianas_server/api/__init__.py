@@ -6,15 +6,23 @@ import datetime
 import requests
 import platform
 import psutil
+import mongoengine
+import socket
+from functools import wraps
 from flask import request, session
 from flask.ext.restful import Resource, abort
 from irianas_server.user import AuthSSH
 from irianas_server.user import ManageUserServer
 from irianas_server.models import RecordSession, Client
 from irianas_server.client import ManageClient, ClientBasicTask
+from irianas_server.logs.logs_user import LogActionUser
+from irianas_server.logs.logs_event_client import LogEventCLient
+
+ip_server = socket.gethostbyname(socket.gethostname())
 
 
 def requires_ssl(f):
+    @wraps(f)
     def inner(*args, **kwargs):
         val = request.url
         if not val.startswith('https'):
@@ -48,7 +56,7 @@ class LoginAPI(Resource):
     @check_token
     @requires_ssl
     def get(self):
-        return dict(login=session['username'])
+        return dict(status=1)
 
     @requires_ssl
     def post(self):
@@ -127,8 +135,7 @@ class ClientAPI(Resource):
             if clients:
                 result = list()
                 for client in clients:
-                    result.append(dict(ip=client.ip_address,
-                                       services=client.services_install))
+                    result.append(dict(ip=client.ip_address))
                 return dict(result=result)
             else:
                 return abort(404)
@@ -136,8 +143,7 @@ class ClientAPI(Resource):
             client = Client.objects(ip_address=request.form['ip_address'])
             if client:
                 client = client[0]
-                return dict(ip_address=request.form['ip_address'],
-                            services=client.services_install)
+                return dict(ip_address=request.form['ip_address'])
             return abort(404)
 
     def post(self):
@@ -163,11 +169,28 @@ class ClientBasicTaskAPI(Resource):
 class ClientServicesAPI(Resource):
 
     method_decorators = [requires_ssl, check_token]
-    url = 'https://{ip}:9000/api/services/{service}/{action}'
+    url = 'https://{ip}:9000/api/services/{services}/{action}'
 
     def get(self, services, action):
-        r = requests.get(self.url)
+        try:
+            client = Client.objects.get(ip_address=request.form['ip'])
+        except mongoengine.DoesNotExist:
+            return abort(404)
+
+        token = client.token
+        data = dict(ip=ip_server, token=token)
+
+        url = self.url.format(services=services, action=action,
+                              ip=request.form['ip'])
+
+        r = requests.get(url, data=data, verify=False)
         if r.status_code == 200:
+            # Logs and events
+            LogActionUser.services_basic_actions(session['username'],
+                                                 services, action)
+
+            LogEventCLient.create_event(client, services, action, r.json())
+            # ------------
             return r.json()
         else:
             return dict(error=0)

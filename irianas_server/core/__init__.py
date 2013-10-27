@@ -12,4 +12,4 @@ def build_app(app):
     api.add_resource(ClientAPI, '/client/<string:action>', '/client')
     api.add_resource(ClientBasicTaskAPI, '/client/task/<string:action>')
     api.add_resource(ClientServicesAPI,
-                     '/client/service/<string:services>/<string:action>')
+                     '/client/services/<string:services>/<string:action>')
