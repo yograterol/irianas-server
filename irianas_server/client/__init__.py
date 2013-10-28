@@ -4,12 +4,14 @@ import socket
 import datetime
 from flask import request
 from flask_restful import abort
-from irianas_server.models import Client, LogResource
+from irianas_server.models import \
+    Client, LogResource, HTTP, SSH, DATABASE, DNS, FTP
 
 ip_server = socket.gethostbyname(socket.gethostname())
 
 url_client = 'https://{ip}:9000/api/connect'
 url_client_task = 'https://{ip}:9000/api/task/{action}'
+url_client_conf = 'https://{ip}:9000/api/services/conf/{service}'
 
 
 class ManageClient(object):
@@ -34,12 +36,37 @@ class ManageClient(object):
             client.token = result['token']
 
             if client.save():
+                ManageClient.get_config(client)
                 return dict(status=1)
             else:
                 return dict(status=-1)
         elif req.status_code == 401:
             return dict(status=-1)
         return dict(status=0)
+
+    @staticmethod
+    def get_config(client):
+        ip = client.ip_address
+        token = client.token
+
+        dict_services = dict(apache=HTTP, ssh=SSH, bind=DNS, vsftpd=FTP)
+        for service, value in dict_services.iteritems():
+            try:
+                req = requests.get(
+                    url_client_conf.format(ip=ip, service=service),
+                    data=dict(ip=ip_server, token=token),
+                    verify=False)
+            except requests.ConnectionError:
+                return False
+
+            if req.status_code == 200:
+                result = req.json()
+                value(last_change=datetime.datetime.now(),
+                      client=ip,
+                      **result).save()
+            else:
+                continue
+        return True
 
     @staticmethod
     def delete_client():
@@ -98,7 +125,7 @@ class ClientBasicTask(object):
                 lg.save()
 
                 return result
-        elif action in ['shut', 'reboot', 'hibernate']:
+        elif action in ['shut', 'reboot', 'hibernate', 'update']:
             try:
                 url = url_client_task.format(ip=ip, action=action)
                 req = requests.get(url, data=data, verify=False)
@@ -116,3 +143,21 @@ class ClientBasicTask(object):
                 return req.json()
             return abort(404)
         return abort(500)
+
+
+class PutConfigService(object):
+
+    @staticmethod
+    def put_config_service(service, ip, data, token):
+        data_server = dict(ip=ip_server, token=token)
+        try:
+            req = requests.put(
+                url_client_conf.format(ip=ip, service=service),
+                data=dict(data.items() + data_server.items()),
+                verify=False)
+        except requests.ConnectionError:
+                return dict(result=0)
+
+        if req.status_code == 200:
+            return req.json()
+        return dict(result=0)

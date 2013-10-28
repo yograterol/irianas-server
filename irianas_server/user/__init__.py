@@ -4,6 +4,7 @@
 #
 import os
 import datetime
+import subprocess as sub
 from paramiko import (SSHClient, WarningPolicy, AuthenticationException)
 from irawadi_user import ManageUser
 from irawadi_user import UserExist, UserNotExist
@@ -40,11 +41,58 @@ class ManageUserServer(object):
     """ Create user in the system, without permissions and without shell """
 
     @staticmethod
+    def check_user_valid(username):
+        users = ManageUserServer.list_users()
+        if users:
+            if not username in users['users']:
+                return True
+        return False
+
+    @staticmethod
+    def expand_time(username, token):
+        rs = RecordSession.objects.get(user=username, token=token)
+        if rs:
+            rs.token_end += datetime.timedelta(0, 900)
+            token_end = rs.token_end - datetime.datetime.now()
+            if token_end <= datetime.timedelta(0, 1800):
+                rs.save()
+                return dict(status=1)
+        return dict(status=0)
+
+    @staticmethod
+    def time(username, token):
+        rs = RecordSession.objects.get(user=username, token=token)
+
+        if rs:
+            time_token = rs.token_end - datetime.datetime.now()
+            return dict(time=str(time_token))
+        return dict(status=0)
+
+    @staticmethod
+    def list_users():
+        cmd = 'awk -F\':\' -v "min=1000" -v "max=2000" \'\
+              { if ( $3 >= min && $3 <= max ) print $1}\' /etc/passwd'
+        action = sub.Popen(cmd, stdout=sub.PIPE, shell=True)
+        (output, error) = action.communicate()
+
+        if output:
+            users_dict = dict()
+            users_dict["users"] = list()
+            for user in output.split('\n'):
+                if user:
+                    users_dict["users"].append(user)
+            return users_dict
+        return None
+
+    @staticmethod
     def add_user(username, password):
         try:
-            if ma.create(user=username, p=password, M='', N='',
-                         s='/sbin/nologin'):
-                return True
+            if ManageUserServer.check_user_valid(username):
+                if ma.create(user=username, p=password, M='', N='',
+                             s='/sbin/nologin'):
+                    return True
+                else:
+                    return False
             else:
                 return False
         except UserExist:

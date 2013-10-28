@@ -8,13 +8,17 @@ import platform
 import psutil
 import mongoengine
 import socket
+from copy import deepcopy
 from functools import wraps
 from flask import request, session
 from flask.ext.restful import Resource, abort
 from irianas_server.user import AuthSSH
 from irianas_server.user import ManageUserServer
-from irianas_server.models import RecordSession, Client
-from irianas_server.client import ManageClient, ClientBasicTask
+from irianas_server.models import \
+    (RecordSession, Client, Event, RecordActionUser, HTTP, DNS, SSH, DATABASE,
+     FTP)
+from irianas_server.client import \
+    ManageClient, ClientBasicTask, PutConfigService
 from irianas_server.logs.logs_user import LogActionUser
 from irianas_server.logs.logs_event_client import LogEventCLient
 
@@ -92,32 +96,49 @@ class InfoAPI(Resource):
 
 
 class UserAPI(Resource):
+    """ API for the User System compare with User on Linux """
     ma = ManageUserServer()
     method_decorators = [requires_ssl, check_token]
 
-    def post(self):
-        if self.ma.add_user(request.form['user'], request.form['pass']):
-            return dict(user=request.form['user'],
-                        action="Created")
+    def get(self, action='list'):
+        if action == 'list':
+            users = self.ma.list_users()
+            if users:
+                return users
+            else:
+                return dict(status=0)
+        elif action == 'expand':
+            return self.ma.expand_time(request.form['username'],
+                                       request.form['token'])
         else:
-            return dict(user=request.form['user'],
-                        action="NotCreated")
+            return self.ma.time(request.form['username'],
+                                request.form['token'])
 
-    def put(self, action='Update'):
-        if action == 'Update':
-            if self.ma.update_user(request.form['user'], request.form['pass']):
-                return dict(user=request.form['user'],
-                            action="Updated")
-            else:
-                return dict(user=request.form['user'],
-                            action="NotUpdated")
+    def post(self):
+        if self.ma.add_user(request.form['user_system'],
+                            request.form['password']):
+            return dict(user=request.form['user_system'],
+                        action=1)
         else:
-            if self.ma.delete_user(request.form['user']):
-                return dict(user=request.form['user'],
-                            action="Deleted")
+            return dict(user=request.form['user_system'],
+                        action=0)
+
+    def put(self, action='update'):
+        if action == 'update':
+            if self.ma.update_user(request.form['user_system'],
+                                   request.form['password']):
+                return dict(user=request.form['user_system'],
+                            action=1)
             else:
-                return dict(user=request.form['user'],
-                            action="NotDeleted")
+                return dict(user=request.form['user_system'],
+                            action=0)
+        else:
+            if self.ma.delete_user(request.form['user_system']):
+                return dict(user=request.form['user_system'],
+                            action=1)
+            else:
+                return dict(user=request.form['user_system'],
+                            action=0)
 
 # ****** END ******
 
@@ -179,7 +200,6 @@ class ClientServicesAPI(Resource):
 
         token = client.token
         data = dict(ip=ip_server, token=token)
-
         url = self.url.format(services=services, action=action,
                               ip=request.form['ip'])
 
@@ -194,3 +214,79 @@ class ClientServicesAPI(Resource):
             return r.json()
         else:
             return dict(error=0)
+
+
+class ClientConfigServicesAPI(Resource):
+    method_decorators = [requires_ssl, check_token]
+    dict_services = dict(apache=HTTP, ssh=SSH, bind=DNS, vsftpd=FTP)
+
+    def get(self):
+
+        try:
+            Client.objects.get(ip_address=request.form['ip'])
+        except mongoengine.DoesNotExist:
+            return abort(404)
+
+        model = self.dict_services[request.form['service']]
+        result = model.objects.get(client=request.form['ip']).to_json()
+        return result
+
+    def post(self):
+        ip = request.form['ip']
+        service = request.form['service']
+        data = dict(request.form.items())
+
+        # Delete unneccesary elements
+        del(data['ip'])
+        del(data['token'])
+        del(data['service'])
+
+        try:
+            client = Client.objects.get(ip_address=ip)
+        except mongoengine.DoesNotExist:
+            return abort(404)
+
+        token = client.token
+
+        # Search the data
+        model = self.dict_services[service]
+        result = model.objects.get(client=ip)
+        result.delete()
+
+        model(last_change=datetime.datetime.now(),
+              client=ip,
+              **data).save()
+
+        return PutConfigService.put_config_service(
+            service, ip, data, token)
+
+
+class EventAPI(Resource):
+    method_decorators = [requires_ssl, check_token]
+
+    def get(self):
+        try:
+            client = Client.objects.get(ip_address=request.form['ip'])
+        except mongoengine.DoesNotExist:
+            return abort(404)
+
+        if client:
+            events = Event.objects(client=client.id)[:4]
+            events_comment = dict()
+            for event in reversed(events):
+                events_comment[event.date.strftime('%d/%m/%Y %H:%M:%S')] = \
+                    event.comment
+
+            return events_comment
+        return abort(404)
+
+
+class UserRecordAPI(Resource):
+    method_decorators = [requires_ssl, check_token]
+
+    def get(self):
+        records = RecordActionUser.objects(user=session['username'])
+
+        if records:
+            return records.to_json()
+        return abort(404)

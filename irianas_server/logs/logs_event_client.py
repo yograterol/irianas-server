@@ -7,9 +7,9 @@ class LogEventCLient(object):
     @staticmethod
     def create_event(client, service, action, result):
         actions = dict(
-            start="Se Activ&oacute el servicio {service}",
-            stop="Se Detuvo el servicio {service}",
-            install="Se instal&oacute; {service})",
+            start="Se activ&oacute el servicio {service}",
+            stop="Se detuvo el servicio {service}",
+            install="Se instal&oacute; {service}",
             remove="Se desinstal&oacute; {service}")
 
         if action in actions.keys():

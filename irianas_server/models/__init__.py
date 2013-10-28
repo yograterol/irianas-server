@@ -51,41 +51,36 @@ class Event(Document):
             'ordering': ['-date']}
 
 
-class SettingService(Document):
-    client = ReferenceField('Client')
-    meta = {'db_alias': 'irianas_web', 'collection': 'client.setting_service'}
-
-
 class HTTP(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
             'collection': 'client.setting_service.http'}
 
 
 class FTP(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
             'collection': 'client.setting_service.ftp'}
 
 
 class DNS(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
             'collection': 'client.setting_service.dns'}
 
 
-class EMAIL(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
-            'collection': 'client.setting_service.email'}
+class SSH(DynamicDocument):
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
+            'collection': 'client.setting_service.ssh'}
 
 
 class DATABASE(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
             'collection': 'client.setting_service.database'}
