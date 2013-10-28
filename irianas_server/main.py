@@ -32,8 +32,10 @@ def main():
     app.secret_key = 'as90kSDKO#1@|4245losadim'
     build_app(app)
     register_connection('irianas_web', 'irianas_web')
+    register_connection('irianas_server', 'irianas_server')
 
-    app.run(debug=debug, ssl_context=context, host='0.0.0.0', port=9001)
+    app.run(debug=debug, ssl_context=context, host='0.0.0.0', port=9001,
+            threaded=True)
 
 if __name__ == '__main__':
     main()

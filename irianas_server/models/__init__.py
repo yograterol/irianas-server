@@ -4,8 +4,8 @@
 #
 import datetime
 from mongoengine import \
-    (Document, DateTimeField, StringField, ListField, ReferenceField,
-     DecimalField, DynamicDocument)
+    (Document, DateTimeField, StringField, ReferenceField,
+     DecimalField, DynamicDocument, IntField)
 
 
 # Database for irianas-web
@@ -21,64 +21,66 @@ class RecordActionUser(Document):
     user = StringField(max_length=50, required=True)
     action = StringField(max_length=50, required=True)
     comment = StringField(max_length=100)
-    date = DateTimeField(default=datetime.datetime.now())
+    date = DateTimeField()
     meta = {'db_alias': 'irianas_web', 'collection': 'record_action_user'}
 
 
 # Database for irianas-server
 class Client(Document):
-    ip_address = StringField(max_length=50, required=True)
-    services_install = ListField()
+    ip_address = StringField(max_length=50, required=True, unique=True)
     token = StringField()
-    token_end = DateTimeField(default=datetime.datetime.now() +
-                              datetime.timedelta(0, 100800))
-    meta = {'db_alias': 'irianas_web'}
+    meta = {'db_alias': 'irianas_server', 'collection': 'client',
+            'indexes': ['ip_address']}
 
 
 class LogResource(Document):
     client = ReferenceField('Client')
-    date = DateTimeField(default=datetime.datetime.now())
+    date = DateTimeField()
     cpu = DecimalField()
     memory = DecimalField()
     disk = DecimalField()
-    meta = {'db_alias': 'irianas_web', 'collection': 'client.log_resource'}
+    meta = {'db_alias': 'irianas_server', 'collection': 'client.log_resource'}
 
 
-class SettingService(Document):
+class Event(Document):
     client = ReferenceField('Client')
-    meta = {'db_alias': 'irianas_web', 'collection': 'client.setting_service'}
+    date = DateTimeField()
+    type_event = IntField(min_value=1, max_value=3)
+    comment = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server', 'collection': 'client.event',
+            'ordering': ['-date']}
 
 
 class HTTP(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
             'collection': 'client.setting_service.http'}
 
 
 class FTP(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
             'collection': 'client.setting_service.ftp'}
 
 
 class DNS(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
             'collection': 'client.setting_service.dns'}
 
 
-class EMAIL(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
-            'collection': 'client.setting_service.email'}
+class SSH(DynamicDocument):
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
+            'collection': 'client.setting_service.ssh'}
 
 
 class DATABASE(DynamicDocument):
-    last_change = DateTimeField(default=datetime.datetime.now(), required=True)
-    client = ReferenceField('SettingService')
-    meta = {'db_alias': 'irianas_web',
+    last_change = DateTimeField()
+    client = StringField(max_length=100)
+    meta = {'db_alias': 'irianas_server',
             'collection': 'client.setting_service.database'}
