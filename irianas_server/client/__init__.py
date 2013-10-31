@@ -49,7 +49,8 @@ class ManageClient(object):
         ip = client.ip_address
         token = client.token
 
-        dict_services = dict(apache=HTTP, ssh=SSH, bind=DNS, vsftpd=FTP)
+        dict_services = dict(apache=HTTP, ssh=SSH, bind=DNS, vsftpd=FTP,
+                             mysql=DATABASE)
         for service, value in dict_services.iteritems():
             try:
                 req = requests.get(
@@ -61,6 +62,13 @@ class ManageClient(object):
 
             if req.status_code == 200:
                 result = req.json()
+
+                try:
+                    serv_document = value.objects.get(client=ip)
+                    serv_document.delete()
+                except mongoengine.DoesNotExist:
+                    pass
+
                 value(last_change=datetime.datetime.now(),
                       client=ip,
                       **result).save()

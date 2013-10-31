@@ -38,3 +38,4 @@ https://github.com/yograterol/irawadi-user/tarball/master
 flask
 flask-restful
 six
+mongoengine
