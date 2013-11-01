@@ -8,7 +8,6 @@ import platform
 import psutil
 import mongoengine
 import socket
-from copy import deepcopy
 from functools import wraps
 from flask import request, session
 from flask.ext.restful import Resource, abort
@@ -218,7 +217,8 @@ class ClientServicesAPI(Resource):
 
 class ClientConfigServicesAPI(Resource):
     method_decorators = [requires_ssl, check_token]
-    dict_services = dict(apache=HTTP, ssh=SSH, bind=DNS, vsftpd=FTP)
+    dict_services = dict(apache=HTTP, ssh=SSH, bind=DNS, vsftpd=FTP,
+                         mysql=DATABASE)
 
     def get(self):
 
